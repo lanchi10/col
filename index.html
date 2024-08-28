@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>משחק התאמה משפחתי</title>
+    <script src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .game-container {
+            text-align: center;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .button {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 3rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .feedback {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 5px;
+        }
+        .correct { background-color: #d4edda; }
+        .incorrect { background-color: #f8d7da; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const colors = ['אדום', 'כחול', 'ירוק', 'צהוב', 'סגול', 'כתום'];
+        const animals = ['כלב', 'חתול', 'דג', 'סוס', 'ארנב', 'תרנגול'];
+
+        const colorToHex = {
+            'אדום': '#FF0000',
+            'כחול': '#0000FF',
+            'ירוק': '#00FF00',
+            'צהוב': '#FFFF00',
+            'סגול': '#800080',
+            'כתום': '#FFA500'
+        };
+
+        const animalToEmoji = {
+            'כלב': '🐶',
+            'חתול': '🐱',
+            'דג': '🐠',
+            'סוס': '🐴',
+            'ארנב': '🐰',
+            'תרנגול': '🐔'
+        };
+
+        function FamilyMatchingGame() {
+            const [gameMode, setGameMode] = React.useState('colors');
+            const [targetItem, setTargetItem] = React.useState('');
+            const [score, setScore] = React.useState(0);
+            const [showFeedback, setShowFeedback] = React.useState(false);
+            const [isCorrect, setIsCorrect] = React.useState(false);
+            const [playerName, setPlayerName] = React.useState('');
+            const [gameStarted, setGameStarted] = React.useState(false);
+
+            const playAudio = React.useCallback((type) => {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                const now = audioContext.currentTime;
+
+                if (type === 'correct') {
+                    for (let i = 0; i < 3; i++) {
+                        oscillator.frequency.setValueAtTime(1000, now + i * 0.1);
+                        oscillator.frequency.setValueAtTime(500, now + i * 0.1 + 0.05);
+                        gainNode.gain.setValueAtTime(0.5, now + i * 0.1);
+                        gainNode.gain.setValueAtTime(0, now + i * 0.1 + 0.05);
+                    }
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.3);
+                } else if (type === 'incorrect') {
+                    oscillator.frequency.setValueAtTime(800, now);
+                    oscillator.frequency.exponentialRampToValueAtTime(400, now + 0.5);
+                    gainNode.gain.setValueAtTime(0.5, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.5);
+                }
+            }, []);
+
+            React.useEffect(() => {
+                if (gameStarted) {
+                    pickNewTargetItem();
+                }
+            }, [gameMode, gameStarted]);
+
+            const pickNewTargetItem = () => {
+                const items = gameMode === 'colors' ? colors : animals;
+                const newItem = items[Math.floor(Math.random() * items.length)];
+                setTargetItem(newItem);
+                setShowFeedback(false);
+            };
+
+            const handleItemClick = (clickedItem) => {
+                if (clickedItem === targetItem) {
+                    setScore(score + 1);
+                    setIsCorrect(true);
+                    playAudio('correct');
+                } else {
+                    setIsCorrect(false);
+                    playAudio('incorrect');
+                }
+                setShowFeedback(true);
+                setTimeout(() => {
+                    pickNewTargetItem();
+                }, 2000);
+            };
+
+            const toggleGameMode = () => {
+                setGameMode(gameMode === 'colors' ? 'animals' : 'colors');
+                setScore(0);
+            };
+
+            const startGame = () => {
+                if (playerName.trim() !== '') {
+                    setGameStarted(true);
+                }
+            };
+
+            const renderItem = (item) => {
+                if (gameMode === 'colors') {
+                    return (
+                        <div 
+                            className="button" 
+                            style={{ backgroundColor: colorToHex[item] }}
+                        ></div>
+                    );
+                } else {
+                    return (
+                        <div className="button">
+                            {animalToEmoji[item]}
+                        </div>
+                    );
+                }
+            };
+
+            if (!gameStarted) {
+                return (
+                    <div className="game-container">
+                        <h1>ברוכים הבאים למשחק המשפחתי!</h1>
+                        <input
+                            type="text"
+                            value={playerName}
+                            onChange={(e) => setPlayerName(e.target.value)}
+                            placeholder="הכניסו את שמכם"
+                            style={{padding: '0.5rem', marginBottom: '1rem'}}
+                        />
+                        <br />
+                        <button onClick={startGame} style={{padding: '0.5rem 1rem', backgroundColor: 'green', color: 'white', border: 'none', borderRadius: '5px'}}>
+                            התחל משחק
+                        </button>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="game-container">
+                    <h1>משחק התאמה משפחתי</h1>
+                    <p>שלום {playerName}! בואו נשחק יחד</p>
+                    <button onClick={toggleGameMode} style={{padding: '0.5rem 1rem', backgroundColor: 'blue', color: 'white', border: 'none', borderRadius: '5px', marginBottom: '1rem'}}>
+                        החלף למשחק {gameMode === 'colors' ? 'חיות' : 'צבעים'}
+                    </button>
+                    <p>איזה {gameMode === 'colors' ? 'צבע' : 'חיה'} זה {targetItem}?</p>
+                    <div className="grid">
+                        {(gameMode === 'colors' ? colors : animals).map((item) => (
+                            <button
+                                key={item}
+                                onClick={() => handleItemClick(item)}
+                                style={{backgroundColor: 'transparent', border: 'none', cursor: 'pointer'}}
+                            >
+                                {renderItem(item)}
+                            </button>
+                        ))}
+                    </div>
+                    <p>ניקוד: {score}</p>
+                    {showFeedback && (
+                        <div className={`feedback ${isCorrect ? 'correct' : 'incorrect'}`}>
+                            <h3>{isCorrect ? `כל הכבוד ${playerName}!` : `נסה שוב, ${playerName}!`}</h3>
+                            <p>
+                                {isCorrect 
+                                    ? `זיהית נכון את ה${gameMode === 'colors' ? 'צבע' : 'חיה'} ${targetItem}!` 
+                                    : `ה${gameMode === 'colors' ? 'צבע' : 'חיה'} הנכון/ה היה/היתה ${targetItem}. נסה שוב בסיבוב הבא!`}
+                            </p>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<FamilyMatchingGame />, document.getElementById('root'));
+    </script>
+</body>
+</html>
