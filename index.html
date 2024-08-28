@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>משחק לאיילה ועומר</title>
+    <title>המשחק של איילה  ועומר</title>
     <script src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
@@ -172,7 +172,7 @@
             if (!gameStarted) {
                 return (
                     <div className="game-container">
-                        <h1>ברוכים הבאים למשחק המשפחתי!</h1>
+                        <h1>ברוכים הבאים למשחק של איילה ועומר!</h1>
                         <input
                             type="text"
                             value={playerName}
@@ -190,7 +190,7 @@
 
             return (
                 <div className="game-container">
-                    <h1>משחק התאמה משפחתי</h1>
+                    <h1>המשחק  של איילה ועומר </h1>
                     <p>שלום {playerName}! בואו נשחק יחד</p>
                     <button onClick={toggleGameMode} style={{padding: '0.5rem 1rem', backgroundColor: 'blue', color: 'white', border: 'none', borderRadius: '5px', marginBottom: '1rem'}}>
                         החלף למשחק {gameMode === 'colors' ? 'חיות' : 'צבעים'}
