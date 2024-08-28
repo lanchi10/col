@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>המשחק של איילה  ועומר</title>
+    <title>משחק התאמה משפחתי</title>
     <script src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
@@ -33,13 +33,18 @@
         .button {
             width: 100px;
             height: 100px;
-            border-radius: 50%;
+            border-radius: 10px;
             border: none;
             cursor: pointer;
             font-size: 3rem;
             display: flex;
             justify-content: center;
             align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .button .emoji {
+            font-size: 3rem;
         }
         .feedback {
             margin-top: 1rem;
@@ -48,6 +53,35 @@
         }
         .correct { background-color: #d4edda; }
         .incorrect { background-color: #f8d7da; }
+        @keyframes celebrate {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 1000;
+        }
+        .celebration-content {
+            font-size: 5rem;
+            animation: celebrate 1s ease-out;
+        }
+        .blink {
+            animation: blink 0.5s linear 3;
+        }
     </style>
 </head>
 <body>
@@ -56,61 +90,108 @@
     <script type="text/babel">
         const colors = ['אדום', 'כחול', 'ירוק', 'צהוב', 'סגול', 'כתום'];
         const animals = ['כלב', 'חתול', 'דג', 'סוס', 'ארנב', 'תרנגול'];
+        const foods = ['עגבניה', 'מלפפון', 'בננה', 'פלפל', 'ענבים', 'גלידה'];
+        const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'];
+        const abc = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
 
         const colorToHex = {
-            'אדום': '#FF0000',
-            'כחול': '#0000FF',
-            'ירוק': '#00FF00',
-            'צהוב': '#FFFF00',
-            'סגול': '#800080',
-            'כתום': '#FFA500'
+            'אדום': '#FF0000', 'כחול': '#0000FF', 'ירוק': '#00FF00',
+            'צהוב': '#FFFF00', 'סגול': '#800080', 'כתום': '#FFA500'
         };
 
         const animalToEmoji = {
-            'כלב': '🐶',
-            'חתול': '🐱',
-            'דג': '🐠',
-            'סוס': '🐴',
-            'ארנב': '🐰',
-            'תרנגול': '🐔'
+            'כלב': '🐶', 'חתול': '🐱', 'דג': '🐠',
+            'סוס': '🐴', 'ארנב': '🐰', 'תרנגול': '🐔'
         };
+
+        const foodToEmoji = {
+            'עגבניה': '🍅', 'מלפפון': '🥒', 'בננה': '🍌',
+            'פלפל': '🫑', 'ענבים': '🍇', 'גלידה': '🍦'
+        };
+
+        const hebrewToEnglish = {
+            'אדום': 'Red', 'כחול': 'Blue', 'ירוק': 'Green', 'צהוב': 'Yellow', 'סגול': 'Purple', 'כתום': 'Orange',
+            'כלב': 'Dog', 'חתול': 'Cat', 'דג': 'Fish', 'סוס': 'Horse', 'ארנב': 'Rabbit', 'תרנגול': 'Rooster',
+            'עגבניה': 'Tomato', 'מלפפון': 'Cucumber', 'בננה': 'Banana', 'פלפל': 'Pepper', 'ענבים': 'Grapes', 'גלידה': 'Ice cream',
+            '1': 'One', '2': 'Two', '3': 'Three', '4': 'Four', '5': 'Five', '6': 'Six', '7': 'Seven', '8': 'Eight', '9': 'Nine', '10': 'Ten',
+            '11': 'Eleven', '12': 'Twelve', '13': 'Thirteen', '14': 'Fourteen', '15': 'Fifteen', '16': 'Sixteen', '17': 'Seventeen', '18': 'Eighteen', '19': 'Nineteen', '20': 'Twenty'
+        };
+
+        function Celebration({ onClose }) {
+            React.useEffect(() => {
+                const timer = setTimeout(onClose, 3000);
+                return () => clearTimeout(timer);
+            }, [onClose]);
+
+            return (
+                <div className="celebration">
+                    <div className="celebration-content">
+                        🎉🎊 כל הכבוד! סיימת סדרה שלמה ללא טעות! 🎊🎉
+                    </div>
+                </div>
+            );
+        }
 
         function FamilyMatchingGame() {
             const [gameMode, setGameMode] = React.useState('colors');
             const [targetItem, setTargetItem] = React.useState('');
+            const [previousItem, setPreviousItem] = React.useState('');
             const [score, setScore] = React.useState(0);
             const [showFeedback, setShowFeedback] = React.useState(false);
             const [isCorrect, setIsCorrect] = React.useState(false);
             const [playerName, setPlayerName] = React.useState('');
             const [gameStarted, setGameStarted] = React.useState(false);
+            const [perfectStreak, setPerfectStreak] = React.useState(0);
+            const [showCelebration, setShowCelebration] = React.useState(false);
+            const [blinkingItem, setBlinkingItem] = React.useState(null);
 
             const playAudio = React.useCallback((type) => {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
+                return new Promise((resolve) => {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
 
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
 
-                const now = audioContext.currentTime;
+                    const now = audioContext.currentTime;
 
-                if (type === 'correct') {
-                    for (let i = 0; i < 3; i++) {
-                        oscillator.frequency.setValueAtTime(1000, now + i * 0.1);
-                        oscillator.frequency.setValueAtTime(500, now + i * 0.1 + 0.05);
-                        gainNode.gain.setValueAtTime(0.5, now + i * 0.1);
-                        gainNode.gain.setValueAtTime(0, now + i * 0.1 + 0.05);
+                    if (type === 'correct') {
+                        for (let i = 0; i < 3; i++) {
+                            oscillator.frequency.setValueAtTime(1000, now + i * 0.1);
+                            oscillator.frequency.setValueAtTime(500, now + i * 0.1 + 0.05);
+                            gainNode.gain.setValueAtTime(0.5, now + i * 0.1);
+                            gainNode.gain.setValueAtTime(0, now + i * 0.1 + 0.05);
+                        }
+                        oscillator.start(now);
+                        oscillator.stop(now + 0.3);
+                        setTimeout(resolve, 300);
+                    } else if (type === 'incorrect') {
+                        oscillator.frequency.setValueAtTime(800, now);
+                        oscillator.frequency.exponentialRampToValueAtTime(400, now + 0.5);
+                        gainNode.gain.setValueAtTime(0.5, now);
+                        gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
+                        oscillator.start(now);
+                        oscillator.stop(now + 0.5);
+                        setTimeout(resolve, 500);
                     }
-                    oscillator.start(now);
-                    oscillator.stop(now + 0.3);
-                } else if (type === 'incorrect') {
-                    oscillator.frequency.setValueAtTime(800, now);
-                    oscillator.frequency.exponentialRampToValueAtTime(400, now + 0.5);
-                    gainNode.gain.setValueAtTime(0.5, now);
-                    gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
-                    oscillator.start(now);
-                    oscillator.stop(now + 0.5);
-                }
+                });
+            }, []);
+
+            const speakEnglish = React.useCallback((text) => {
+                return new Promise((resolve) => {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'en-US';
+                    utterance.rate = 0.8; // קצב דיבור איטי יותר
+                    utterance.pitch = 1.2; // גובה קול גבוה יותר (קול אישה)
+                    const voices = speechSynthesis.getVoices();
+                    const femaleVoice = voices.find(voice => voice.name.includes('Female') && voice.lang.startsWith('en'));
+                    if (femaleVoice) {
+                        utterance.voice = femaleVoice;
+                    }
+                    utterance.onend = resolve;
+                    speechSynthesis.speak(utterance);
+                });
             }, []);
 
             React.useEffect(() => {
@@ -120,30 +201,55 @@
             }, [gameMode, gameStarted]);
 
             const pickNewTargetItem = () => {
-                const items = gameMode === 'colors' ? colors : animals;
-                const newItem = items[Math.floor(Math.random() * items.length)];
+                const items = gameMode === 'colors' ? colors : 
+                              (gameMode === 'animals' ? animals : 
+                              (gameMode === 'foods' ? foods : 
+                              (gameMode === 'numbers' ? numbers : abc)));
+                let newItem;
+                do {
+                    newItem = items[Math.floor(Math.random() * items.length)];
+                } while (newItem === previousItem && items.length > 1);
                 setTargetItem(newItem);
+                setPreviousItem(newItem);
                 setShowFeedback(false);
             };
 
-            const handleItemClick = (clickedItem) => {
+            const handleItemClick = async (clickedItem) => {
                 if (clickedItem === targetItem) {
                     setScore(score + 1);
                     setIsCorrect(true);
-                    playAudio('correct');
+                    setBlinkingItem(clickedItem);
+                    await playAudio('correct');
+                    await speakEnglish(gameMode === 'abc' ? clickedItem : hebrewToEnglish[clickedItem] || clickedItem);
+                    setPerfectStreak(prev => prev + 1);
+                    if (perfectStreak + 1 === 6) {
+                        setShowCelebration(true);
+                        setPerfectStreak(0);
+                    }
                 } else {
                     setIsCorrect(false);
-                    playAudio('incorrect');
+                    await playAudio('incorrect');
+                    await speakEnglish(gameMode === 'abc' ? clickedItem : hebrewToEnglish[clickedItem] || clickedItem);
+                    setPerfectStreak(0);
                 }
                 setShowFeedback(true);
                 setTimeout(() => {
+                    setBlinkingItem(null);
                     pickNewTargetItem();
                 }, 2000);
             };
 
             const toggleGameMode = () => {
-                setGameMode(gameMode === 'colors' ? 'animals' : 'colors');
+                setGameMode(prevMode => {
+                    if (prevMode === 'colors') return 'animals';
+                    if (prevMode === 'animals') return 'foods';
+                    if (prevMode === 'foods') return 'numbers';
+                    if (prevMode === 'numbers') return 'abc';
+                    return 'colors';
+                });
                 setScore(0);
+                setPerfectStreak(0);
+                setPreviousItem('');
             };
 
             const startGame = () => {
@@ -153,17 +259,30 @@
             };
 
             const renderItem = (item) => {
+                const isBlinking = item === blinkingItem;
                 if (gameMode === 'colors') {
                     return (
                         <div 
-                            className="button" 
+                            className={`button ${isBlinking ? 'blink' : ''}`}
                             style={{ backgroundColor: colorToHex[item] }}
                         ></div>
                     );
+                } else if (gameMode === 'animals') {
+                    return (
+                        <div className={`button ${isBlinking ? 'blink' : ''}`}>
+                            <span className="emoji">{animalToEmoji[item]}</span>
+                        </div>
+                    );
+                } else if (gameMode === 'foods') {
+                    return (
+                        <div className={`button ${isBlinking ? 'blink' : ''}`}>
+                            <span className="emoji">{foodToEmoji[item]}</span>
+                        </div>
+                    );
                 } else {
                     return (
-                        <div className="button">
-                            {animalToEmoji[item]}
+                        <div className={`button ${isBlinking ? 'blink' : ''}`}>
+                            <span>{item}</span>
                         </div>
                     );
                 }
@@ -172,15 +291,14 @@
             if (!gameStarted) {
                 return (
                     <div className="game-container">
-                        <h1>ברוכים הבאים למשחק של איילה ועומר!</h1>
+                        <h1>ברוכים הבאים למשחק המשפחתי!</h1>
                         <input
                             type="text"
                             value={playerName}
                             onChange={(e) => setPlayerName(e.target.value)}
                             placeholder="הכניסו את שמכם"
                             style={{padding: '0.5rem', marginBottom: '1rem'}}
-                        />
-                        <br />
+                        /><br />
                         <button onClick={startGame} style={{padding: '0.5rem 1rem', backgroundColor: 'green', color: 'white', border: 'none', borderRadius: '5px'}}>
                             התחל משחק
                         </button>
@@ -190,14 +308,14 @@
 
             return (
                 <div className="game-container">
-                    <h1>המשחק  של איילה ועומר </h1>
+                    <h1>משחק התאמה משפחתי</h1>
                     <p>שלום {playerName}! בואו נשחק יחד</p>
                     <button onClick={toggleGameMode} style={{padding: '0.5rem 1rem', backgroundColor: 'blue', color: 'white', border: 'none', borderRadius: '5px', marginBottom: '1rem'}}>
-                        החלף למשחק {gameMode === 'colors' ? 'חיות' : 'צבעים'}
+                        החלף למשחק {gameMode === 'colors' ? 'חיות' : (gameMode === 'animals' ? 'מאכלים' : (gameMode === 'foods' ? 'מספרים' : (gameMode === 'numbers' ? 'ABC' : 'צבעים')))}
                     </button>
-                    <p>איזה {gameMode === 'colors' ? 'צבע' : 'חיה'} זה {targetItem}?</p>
+                    <p>איזה {gameMode === 'colors' ? 'צבע' : (gameMode === 'animals' ? 'חיה' : (gameMode === 'foods' ? 'מאכל' : (gameMode === 'numbers' ? 'מספר' : 'אות')))} זה {targetItem}?</p>
                     <div className="grid">
-                        {(gameMode === 'colors' ? colors : animals).map((item) => (
+                        {(gameMode === 'colors' ? colors : (gameMode === 'animals' ? animals : (gameMode === 'foods' ? foods : (gameMode === 'numbers' ? numbers : abc)))).map((item) => (
                             <button
                                 key={item}
                                 onClick={() => handleItemClick(item)}
@@ -213,11 +331,12 @@
                             <h3>{isCorrect ? `כל הכבוד ${playerName}!` : `נסה שוב, ${playerName}!`}</h3>
                             <p>
                                 {isCorrect 
-                                    ? `זיהית נכון את ה${gameMode === 'colors' ? 'צבע' : 'חיה'} ${targetItem}!` 
-                                    : `ה${gameMode === 'colors' ? 'צבע' : 'חיה'} הנכון/ה היה/היתה ${targetItem}. נסה שוב בסיבוב הבא!`}
+                                    ? `זיהית נכון את ה${gameMode === 'colors' ? 'צבע' : (gameMode === 'animals' ? 'חיה' : (gameMode === 'foods' ? 'מאכל' : (gameMode === 'numbers' ? 'מספר' : 'אות')))} ${targetItem}!` 
+                                    : `ה${gameMode === 'colors' ? 'צבע' : (gameMode === 'animals' ? 'חיה' : (gameMode === 'foods' ? 'מאכל' : (gameMode === 'numbers' ? 'מספר' : 'אות')))} הנכון/ה היה/היתה ${targetItem}. נסה שוב בסיבוב הבא!`}
                             </p>
                         </div>
                     )}
+                    {showCelebration && <Celebration onClose={() => setShowCelebration(false)} />}
                 </div>
             );
         }
